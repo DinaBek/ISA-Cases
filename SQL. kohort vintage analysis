@@ -1,0 +1,52 @@
+  select    
+                        --date_trunc('month', min_date) mm
+                          name_partner
+                        , sum(case when rn = 1 then 1 else 0 end)::float rn_1
+                        , sum(case when rn = 2 then 1 else 0 end)::float rn_2
+                        , sum(case when rn = 3 then 1 else 0 end)::float rn_3
+                        , sum(case when rn = 4 then 1 else 0 end)::float rn_4
+                        , sum(case when rn = 5 then 1 else 0 end)::float rn_5
+                        , sum(case when rn = 6 then 1 else 0 end)::float rn_6
+                        , sum(case when rn = 7 then 1 else 0 end)::float rn_7
+                        , sum(case when rn = 2 then 1 else 0 end)::float/sum(case when rn = 1 then 1 else 0 end)::float prn_2
+                        , sum(case when rn = 3 then 1 else 0 end)::float/sum(case when rn = 1 then 1 else 0 end)::float prn_3
+                        , sum(case when rn = 4 then 1 else 0 end)::float/sum(case when rn = 1 then 1 else 0 end)::float prn_4
+                        , sum(case when rn = 5 then 1 else 0 end)::float/sum(case when rn = 1 then 1 else 0 end)::float prn_5
+                        , sum(case when rn = 6 then 1 else 0 end)::float/sum(case when rn = 1 then 1 else 0 end)::float prn_6
+                        , sum(case when rn = 7 then 1 else 0 end)::float/sum(case when rn = 1 then 1 else 0 end)::float prn_7
+                        , sum(case when rn = 1 then amt_payment else 0 end)::float  ap_1
+                        , sum(case when rn = 2 then amt_payment else 0 end)::float  ap_2
+                        , sum(case when rn = 3 then amt_payment else 0 end)::float  ap_3
+                        , sum(case when rn = 4 then amt_payment else 0 end)::float  ap_4
+                        , sum(case when rn = 5 then amt_payment else 0 end)::float  ap_5
+                        , sum(case when rn = 6 then amt_payment else 0 end)::float  ap_6
+                        , sum(case when rn = 7 then amt_payment else 0 end)::float  ap_7
+                        , count(*)
+                       
+                        
+                        
+                from
+                        (select   a.*
+                                , name_partner
+                                ,row_number() over (partition by a.user_id order by date_purchase) rn -- partition by (разбиение по) user_id order by date_purchase (принцип сортировки)
+                        from skycinema.client_sign_up a
+                                       left join skycinema.partner_dict b
+                                           on a.partner = b.id_partner
+                                       
+                        where 1=1 
+                            and is_trial = 0 or is_trial = -1
+                            --and name_partner in ('МТС','Билайн','Мегафон','Теле2')
+                            
+                        )t
+                         
+                         left join (select a.user_id,  min(date_purchase) min_date
+                                            from skycinema.client_sign_up a
+                                            group by user_id
+                                            order by user_id
+                                            )t2
+                                        on t.user_id = t2.user_id     
+                           
+                       
+                group by name_partner
+                -- group by mm
+                -- order by mm
