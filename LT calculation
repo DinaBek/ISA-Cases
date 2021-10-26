@@ -1,0 +1,52 @@
+select   id_port
+        
+        , r_1
+        , r_2
+        , r_3
+        , r_4
+        , r_5
+        , r_6
+        , r_7
+        , r_8
+        , r_9
+        , (r_1 + r_9)/2 + r_2 + r_3 + r_4 + r_5 + r_6 + r_7 + r_8  as LT
+        , cnt_all
+from    (select   id_port
+                , cnt_all
+                ,rn_1/cnt_all as r_1
+                ,rn_2/cnt_all as r_2
+                ,rn_3/cnt_all as r_3
+                ,rn_4/cnt_all as r_4
+                ,rn_5/cnt_all as r_5
+                ,rn_6/cnt_all as r_6
+                ,rn_7/cnt_all as r_7
+                ,rn_8/cnt_all as r_8
+                ,rn_9/cnt_all as r_9
+
+        from    (select id_port
+                            --case when date_part('hour',time_came) <=6 then  'night'
+                             --when date_part('hour',time_came) <=12 then 'morning'
+                             --when date_part('hour',time_came) <=18 then 'day'
+                             --else 'evening' 
+                        --end as hh
+                        , count(*) as cnt_all
+                        , sum(case when time_left  >  time_came + interval '1 hour' then 1 else 0 end)::float rn_1
+                        , sum(case when time_left  >  time_came + interval '2 hour' then 1 else 0 end)::float rn_2
+                        , sum(case when time_left  >  time_came + interval '3 hour' then 1 else 0 end)::float rn_3
+                        , sum(case when time_left  >  time_came + interval '4 hour' then 1 else 0 end)::float rn_4
+                        , sum(case when time_left  >  time_came + interval '5 hour' then 1 else 0 end)::float rn_5
+                        , sum(case when time_left  >  time_came + interval '6 hour' then 1 else 0 end)::float rn_6
+                        , sum(case when time_left  >  time_came + interval '7 hour' then 1 else 0 end)::float rn_7
+                        , sum(case when time_left  >  time_came + interval '8 hour' then 1 else 0 end)::float rn_8
+                        , sum(case when time_left  >  time_came + interval '9 hour' then 1 else 0 end)::float rn_9
+                
+                from skytaxi.airport_visit 
+                where 1=1 
+                    and time_left - time_came <= '11 hour'
+                    --and left_w_order = 0
+                    --and left_w_order = 1
+                group by id_port
+                order by id_port
+                
+                )t
+        )t2
