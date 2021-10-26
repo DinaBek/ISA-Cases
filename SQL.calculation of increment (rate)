@@ -1,0 +1,40 @@
+select  name_tariff
+        , next_o2r::float/o2r::float cepn_rost
+        , (next_o2r::float - o2r::float)/o2r::float cepn_prirost
+        , next_o2r::float/x0::float basis_rost
+        , (next_o2r::float-x0::float)/x0::float basis_prirost
+from    (select name_tariff
+                , order_time
+                , o2r
+                , prev_o2r
+                , next_o2r
+                , next_o2r::float/o2r::float cepn_rost
+                , (next_o2r::float - o2r::float)/o2r::float cepn_prirost
+                , sum(case when cnt = min_cnt then sum_fin::float/cnt else 0 end) over (partition by name_tariff) as x0
+        from    (select name_tariff
+                        , order_time
+                        , sum_fin
+                        , cnt
+                        , min(cnt) over (partition by name_tariff) as min_cnt
+                        , sum_fin::float/cnt as o2r
+                        ,lag(sum_fin::float/cnt) over (partition by name_tariff order by order_time) as prev_o2r
+                        ,lead(sum_fin::float/cnt) over (partition by name_tariff order by order_time) as next_o2r
+                from    (select    name_tariff
+                                , order_time
+                                , sum (case when order_finish_time is not null then 1 else 0 end) over (partition by name_tariff order by order_time ) as sum_fin
+                                , count(*) over (partition by name_tariff order by order_time ) as cnt
+                        from skytaxi.order_list ol 
+                            left join skytaxi.tariff_dict td 
+                                on ol.id_tariff = td.id_tariff
+                        where 1=1 
+                            and name_tariff = 'Эконом' or name_tariff = 'Комфорт'
+                            and order_time is not null
+                            
+                        --group by name_tariff
+                        order by name_tariff, order_time
+                        )t
+                where 1=1 
+                    and sum_fin > 0
+                order by name_tariff, order_time
+                )t1
+)t
