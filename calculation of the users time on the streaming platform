@@ -1,0 +1,22 @@
+select user_id
+        , case when '2021-02-7' >= last_date + interval '30 day' then sum_period
+          else   '2021-02-7' - last_date + sum_period
+          end  as time_on_platform                                                          -- time on platform by the particular date 
+        -- , case when current_date >= last_date + interval '30 day' then sum_period
+        --   else   current_date - last_date + sum_period
+        --   end as in_service                                                              -- time on platform by the current date
+from
+        (select*
+                ,sum(period) over (partition by user_id) as sum_period                      -- total time on platform for each user
+        from        (select   user_id
+                            , date_purchase
+                            , is_trial
+                            , min(date_purchase) over (partition by user_id) as first_date  -- date of purchase
+                            ,max(date_purchase) over (partition by user_id) as last_date    -- date of platform leaving
+                            , case when is_trial = 1 or is_trial = 0 then 15   
+                                  else 30
+                            end period                                                      -- trial and normal periods by duration
+                    from skycinema.client_sign_up
+                    order by user_id, date_purchase
+                    )t
+        )t1
